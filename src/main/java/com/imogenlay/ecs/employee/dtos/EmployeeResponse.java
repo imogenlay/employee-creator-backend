@@ -3,6 +3,7 @@ package com.imogenlay.ecs.employee.dtos;
 import java.time.LocalDate;
 
 public record EmployeeResponse(
+		Long id,
 		String firstName,
 		String middleName,
 		String lastName,
