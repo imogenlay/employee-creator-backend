@@ -41,7 +41,7 @@ public class EmployeeService
 
 	public ConditionalObject<EmployeeResponse> create(CreateEmployeeDto data)
 	{
-		if (fullNameIsValid(data, 2))
+		if (!fullNameIsValid(data, 2))
 			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Employee's full name must be more than 1 letter.");
 		if (!isEndDateValid(data.startDate(), data.endDate()))
 			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Cannot create employee where end date is before start date.");
@@ -56,7 +56,7 @@ public class EmployeeService
 		ConditionalObject<Employee> resultEmployee = findById(id);
 		if (resultEmployee.hasError())
 			return resultEmployee.copyError();
-		if (fullNameIsValid(data, 2))
+		if (!fullNameIsValid(data, 2))
 			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Employee's full name must be more than 1 letter.");
 
 		Employee employee = resultEmployee.getObject();
@@ -107,7 +107,8 @@ public class EmployeeService
 		String firstName = normaliseString(fullName.getFirstName());
 		String middleName = normaliseString(fullName.getMiddleName());
 		String lastName = normaliseString(fullName.getLastName());
-		String newFullName = firstName + " " + middleName + " " + lastName;
+		String newFullName = firstName + middleName + lastName;
+		System.out.println("\n\n" + newFullName + "\n\n");
 		return normaliseString(newFullName).length() >= minimumLength;
 	}
 

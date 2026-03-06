@@ -11,13 +11,13 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "employees")
 @EntityListeners(TimestampedEntityListener.class)
 public class Employee extends BaseTimestampedEntity implements IFullName
 {
 
 	private String firstName;
-	private String middleName;
+	private String middleName = "";
 	private String lastName;
 
 	private String email;

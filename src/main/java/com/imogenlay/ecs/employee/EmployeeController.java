@@ -34,7 +34,7 @@ public class EmployeeController
 
 		Sort sort = Sort.by(
 				params.orderOrDefault() == SortOrder.ASC ? Sort.Direction.ASC : Sort.Direction.DESC,
-				"name"
+				"lastName"
 		);
 
 		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAll(params.names(), sort));
