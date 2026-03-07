@@ -16,13 +16,11 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler
 {
-
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ExceptionResponse> handleValidationException(
 			MethodArgumentNotValidException ex,
 			HttpServletRequest request)
 	{
-
 		Map<String, String> errors = new HashMap<>();
 
 		ex.getBindingResult().getAllErrors().forEach(error -> {
@@ -37,13 +35,15 @@ public class GlobalExceptionHandler
 		});
 
 		BadRequestException exception = new BadRequestException("Validation failed");
-		return build(exception, request, errors);
+		return build(exception.getMessage(), exception.getStatus(), request, errors);
 	}
 
 	@ExceptionHandler(ExceptionBase.class)
-	private ResponseEntity<ExceptionResponse> build(ExceptionBase ex, HttpServletRequest request, Map<String, String> details)
+	private ResponseEntity<ExceptionResponse> build(ExceptionBase ex, HttpServletRequest request)
 	{
-		return build(ex.getMessage(), ex.getStatus(), request, details);
+		Map<String, String> errors = new HashMap<>();
+		errors.put("error", ex.getMessage());
+		return build(ex.getTitle(), ex.getStatus(), request, errors);
 	}
 
 	private ResponseEntity<ExceptionResponse> build(String message, HttpStatus status, HttpServletRequest request, Map<String, String> details)
