@@ -168,7 +168,7 @@ class EmployeeE2eTest extends E2eBase
 	{
 		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
 		Map<String, Object> dto = new HashMap<>();
-		dto.put("firstName", "  Jimm  ");
+		dto.put("firstName", "  Jim  ");
 		long id = employee.getId() + 1;
 
 		test()
