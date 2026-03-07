@@ -146,6 +146,43 @@ class EmployeeE2eTest extends E2eBase
 	}
 
 	@Test
+	void putEmployee_updateFirstName_returns200()
+	{
+		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
+		Map<String, Object> dto = new HashMap<>();
+		dto.put("firstName", "   Bill    ");
+
+		test()
+				.contentType("application/json")
+				.when()
+				.body(dto)
+				.put("/employees/" + employee.getId())
+				.then()
+				.statusCode(200)
+				.body(matchesJsonSchemaInClasspath("schemas/employee-response-schema.json"))
+				.body("firstName", equalTo("Bill"));
+	}
+
+	@Test
+	void putEmployee_updateFirstName_IdDoesNotExist_returns404()
+	{
+		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
+		Map<String, Object> dto = new HashMap<>();
+		dto.put("firstName", "  Jimm  ");
+		long id = employee.getId() + 1;
+
+		test()
+				.contentType("application/json")
+				.when()
+				.body(dto)
+				.put("/employees/" + id)
+				.then()
+				.statusCode(404)
+				.body(matchesJsonSchemaInClasspath("schemas/exception-response-schema.json"))
+				.body("details.error", equalTo("Employee with ID [" + id + "] does not exist"));
+	}
+
+	@Test
 	void deleteEmployee_returns204()
 	{
 		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
