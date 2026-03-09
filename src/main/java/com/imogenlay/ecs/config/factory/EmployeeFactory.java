@@ -1,12 +1,15 @@
 package com.imogenlay.ecs.config.factory;
 
 import com.github.javafaker.Faker;
+import com.imogenlay.ecs.employee.ContractRepository;
 import com.imogenlay.ecs.employee.EmployeeRepository;
+import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Random;
 
 @Component
@@ -14,17 +17,24 @@ import java.util.Random;
 public class EmployeeFactory
 {
 	private final EmployeeRepository employeeRepository;
+	private final ContractRepository contractRepository;
 	private final Faker faker = new Faker();
 	private int numberTicker = 0;
 
-	public EmployeeFactory(EmployeeRepository employeeRepository)
+	public EmployeeFactory(EmployeeRepository employeeRepository, ContractRepository contractRepository)
 	{
 		this.employeeRepository = employeeRepository;
+		this.contractRepository = contractRepository;
 	}
 
 	public boolean repoEmpty()
 	{
 		return employeeRepository.count() == 0;
+	}
+
+	public boolean contractRepoEmpty()
+	{
+		return contractRepository.count() == 0;
 	}
 
 	private Employee create(EmployeeFactoryOptions options)
@@ -38,7 +48,7 @@ public class EmployeeFactory
 		employee.setMobile(getMobile(options));
 		employee.setAddress(getAddress(options));
 
-		employee.setIsFullTime(options.isFullTime != null ? options.isFullTime : false);
+		employee.setContract(options.contract != null ? options.contract : getContract());
 		employee.setHoursPerWeek(options.hoursPerWeek != null ? options.hoursPerWeek : (int) (Math.random() * 40));
 
 		employee.setStartDate(getStartDate(options));
@@ -62,6 +72,13 @@ public class EmployeeFactory
 	{
 		Employee employee = create();
 		return employeeRepository.save(employee);
+	}
+
+	public Contract createAndPersistContract(String name)
+	{
+		Contract contract = new Contract();
+		contract.setName(name);
+		return contractRepository.save(contract);
 	}
 
 	public void clear()
@@ -123,6 +140,20 @@ public class EmployeeFactory
 			address += " NSW";
 
 		return address;
+	}
+
+	private Contract getContract()
+	{
+		if (contractRepoEmpty())
+		{
+			Contract contract = new Contract();
+			contract.setName("Permanent Full-Time");
+			contractRepository.save(contract);
+			return contract;
+		}
+		
+		List<Contract> allContracts = contractRepository.findAll();
+		return allContracts.get((int) (Math.random() * allContracts.size()));
 	}
 
 	private LocalDate getStartDate(EmployeeFactoryOptions options)

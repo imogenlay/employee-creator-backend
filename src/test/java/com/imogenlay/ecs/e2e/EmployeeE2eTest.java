@@ -28,7 +28,7 @@ class EmployeeE2eTest extends E2eBase
 		dto.put("email", "george_mark@email.com");
 		dto.put("mobile", "1800 9090 2");
 		dto.put("address", "100 House Street VIC");
-		dto.put("isFullTime", false);
+		dto.put("contractId", 1);
 		dto.put("hoursPerWeek", 30L);
 		dto.put("startDate", "2027-01-01");
 		dto.put("endDate", "2027-12-01");
@@ -109,8 +109,7 @@ class EmployeeE2eTest extends E2eBase
 				.body("details.lastName", equalTo("Last name is required"))
 				.body("details.email", equalTo("Email is required"))
 				.body("details.address", equalTo("Address is required"))
-				.body("details.hoursPerWeek", equalTo("Hours per week is required"))
-				.body("details.isFullTime", equalTo("Employment type (isFullTime) is required"));
+				.body("details.hoursPerWeek", equalTo("Hours per week is required"));
 	}
 
 	@Test

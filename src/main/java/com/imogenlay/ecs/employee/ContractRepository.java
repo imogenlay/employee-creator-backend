@@ -1,0 +1,8 @@
+package com.imogenlay.ecs.employee;
+
+import com.imogenlay.ecs.employee.entity.Contract;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ContractRepository extends JpaRepository<Contract, Long>
+{
+}

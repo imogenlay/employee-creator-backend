@@ -10,7 +10,8 @@ public record EmployeeResponse(
 		String email,
 		String mobile,
 		String address,
-		Boolean isFullTime,
+		Long contractId,
+		String contractName,
 		Long hoursPerWeek,
 		LocalDate startDate,
 		LocalDate endDate)

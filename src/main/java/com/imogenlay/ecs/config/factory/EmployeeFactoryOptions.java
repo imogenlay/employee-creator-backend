@@ -1,5 +1,7 @@
 package com.imogenlay.ecs.config.factory;
 
+import com.imogenlay.ecs.employee.entity.Contract;
+
 import java.time.LocalDate;
 
 public class EmployeeFactoryOptions
@@ -12,7 +14,7 @@ public class EmployeeFactoryOptions
 	public String mobile;
 	public String address;
 
-	public Boolean isFullTime;
+	public Contract contract;
 	public Long hoursPerWeek;
 
 	public LocalDate startDate;
@@ -54,9 +56,9 @@ public class EmployeeFactoryOptions
 		return this;
 	}
 
-	public EmployeeFactoryOptions isFullTime(Boolean isFullTime)
+	public EmployeeFactoryOptions contract(Contract contract)
 	{
-		this.isFullTime = isFullTime;
+		this.contract = contract;
 		return this;
 	}
 

@@ -2,9 +2,11 @@ package com.imogenlay.ecs.employee;
 
 import com.imogenlay.ecs.common.ConditionalObject;
 import com.imogenlay.ecs.common.entity.IFullName;
+import com.imogenlay.ecs.employee.dtos.ContractResponse;
 import com.imogenlay.ecs.employee.dtos.CreateEmployeeDto;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
 import com.imogenlay.ecs.employee.dtos.UpdateEmployeeDto;
+import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -17,7 +19,6 @@ import java.util.Optional;
 @Service
 public class EmployeeService
 {
-
 	private final EmployeeAccessHandler employeeAccessHandler;
 
 	public EmployeeService(EmployeeAccessHandler employeeAccessHandler)
@@ -25,9 +26,14 @@ public class EmployeeService
 		this.employeeAccessHandler = employeeAccessHandler;
 	}
 
-	public List<EmployeeResponse> findAll(List<String> categories, Sort sort)
+	public List<EmployeeResponse> findAll(List<String> employees, Sort sort)
 	{
-		return employeeAccessHandler.findAll(categories, sort);
+		return employeeAccessHandler.findAll(employees, sort);
+	}
+
+	public List<ContractResponse> findAllContracts(Sort sort)
+	{
+		return employeeAccessHandler.findAllContracts(sort);
 	}
 
 	public ConditionalObject<Employee> findById(Long id)
@@ -45,8 +51,11 @@ public class EmployeeService
 			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Employee's full name must be more than 1 letter");
 		if (!isEndDateValid(data.startDate(), data.endDate()))
 			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Cannot create employee where end date is before start date");
+		Optional<Contract> resultContract = employeeAccessHandler.findContractById(data.contractId());
+		if (resultContract.isEmpty())
+			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Contract with ID [" + data.contractId() + "] does not exist");
 
-		Employee employee = createEmployeeFromData(data);
+		Employee employee = createEmployeeFromData(data, resultContract.get());
 		employeeAccessHandler.saveAndFlush(employee);
 		return new ConditionalObject<>(employee.createResponse());
 	}
@@ -60,13 +69,14 @@ public class EmployeeService
 			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Employee's full name must be more than 1 letter");
 
 		Employee employee = resultEmployee.getObject();
-		/*if (data.projectId() != null)
+		if (data.contractId() != null)
 		{
-			ConditionalObject<Project> resultProject = projectAccessHandler.findById(id);
-			if (resultProject.hasError())
-				return new ConditionalObject<>(resultProject);
-			employee.setProject(resultProject.getObject());
-		}*/
+			Optional<Contract> resultContract = employeeAccessHandler.findContractById(id);
+			if (resultContract.isEmpty())
+				return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Contract with ID [" + data.contractId() + "] does not exist");
+
+			employee.setContract(resultContract.get());
+		}
 		if (data.firstName() != null)
 			employee.setFirstName(normaliseString(data.firstName()));
 		if (data.middleName() != null)
@@ -79,8 +89,6 @@ public class EmployeeService
 			employee.setMobile(normaliseString(data.mobile()));
 		if (data.address() != null)
 			employee.setAddress(normaliseString(data.address()));
-		if (data.isFullTime() != null)
-			employee.setIsFullTime(data.isFullTime());
 		if (data.hoursPerWeek() != null)
 			employee.setHoursPerWeek(data.hoursPerWeek());
 		if (data.startDate() != null)
@@ -125,7 +133,7 @@ public class EmployeeService
 		return !endDate.isBefore(startDate);
 	}
 
-	private Employee createEmployeeFromData(CreateEmployeeDto data)
+	private Employee createEmployeeFromData(CreateEmployeeDto data, Contract contract)
 	{
 		Employee employee = new Employee();
 		employee.setFirstName(normaliseString(data.firstName()));
@@ -134,7 +142,8 @@ public class EmployeeService
 		employee.setEmail(normaliseString(data.email()));
 		employee.setMobile(normaliseString(data.mobile()));
 		employee.setAddress(normaliseString(data.address()));
-		employee.setIsFullTime(data.isFullTime());
+
+		employee.setContract(contract);
 		employee.setHoursPerWeek(data.hoursPerWeek());
 		employee.setStartDate(data.startDate());
 		employee.setEndDate(data.endDate());

@@ -21,6 +21,14 @@ public class DataSeeder implements CommandLineRunner
 	{
 		System.out.println("SEED NEW EMPLOYEES");
 		if (employeeFactory.repoEmpty())
+		{
+			employeeFactory.createAndPersistContract("Permanent Full-Time");
+			employeeFactory.createAndPersistContract("Permanent Part-Time");
+			employeeFactory.createAndPersistContract("Contract Full-Time");
+			employeeFactory.createAndPersistContract("Contract Part-Time");
+		}
+ 
+		if (employeeFactory.repoEmpty())
 			for (int i = 0; i < 15; i++)
 				employeeFactory.createAndPersist();
 	}

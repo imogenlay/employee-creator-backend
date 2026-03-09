@@ -27,7 +27,8 @@ public record UpdateEmployeeDto(
 		@Size(max = 255, message = "Address must be <= 255 characters")
 		String address,
 
-		Boolean isFullTime,
+		@Min(value = 1, message = "Contract ID must be at least 1")
+		Long contractId,
 
 		@Min(value = 1, message = "Hours per week must be at least 1")
 		@Max(value = 40, message = "Hours per week must be <= 40")

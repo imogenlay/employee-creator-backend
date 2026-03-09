@@ -1,6 +1,8 @@
 package com.imogenlay.ecs.employee;
 
+import com.imogenlay.ecs.employee.dtos.ContractResponse;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
+import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
@@ -16,25 +18,26 @@ public class EmployeeAccessHandler
 {
 
 	private final EmployeeRepository employeeRepository;
+	private final ContractRepository contractRepository;
 
-	public EmployeeAccessHandler(EmployeeRepository employeeRepository) { this.employeeRepository = employeeRepository; }
-
-	public List<Employee> findAll(Sort sort)
+	public EmployeeAccessHandler(EmployeeRepository employeeRepository, ContractRepository contractRepository)
 	{
-		return employeeRepository.findAll(sort);
+		this.employeeRepository = employeeRepository;
+		this.contractRepository = contractRepository;
+	}
+
+	public List<EmployeeResponse> findAll(Sort sort)
+	{
+		return employeeRepository.findAll(sort).stream().map((t) -> t.createResponse()).toList();
 	}
 
 	public List<EmployeeResponse> findAll(List<String> names, Sort sort)
 	{
-		List<Employee> employees;
 		if (names == null || names.isEmpty())
-			employees = findAll(sort);
+			return findAll(sort);
 		else
-		{
-			employees = employeeRepository.findAll(nameStartsWith(names), sort);
-		}
+			return employeeRepository.findAll(nameStartsWith(names), sort).stream().map((t) -> t.createResponse()).toList();
 
-		return employees.stream().map((t) -> t.createResponse()).toList();
 	}
 
 	public Optional<Employee> findById(Long id)
@@ -42,23 +45,31 @@ public class EmployeeAccessHandler
 		return employeeRepository.findById(id);
 	}
 
-	/*public List<Employee> findByEmployeeNameIgnoreCase(List<String> names, Sort sort)
+	public List<ContractResponse> findAllContracts(Sort sort)
 	{
-		return employeeRepository.findDistinctWithNamesIgnoreCase(names, sort);
-	}*/
+		return contractRepository.findAll(sort).stream().map((c) -> c.createResponse()).toList();
+	}
+
+	public Optional<Contract> findContractById(Long id)
+	{
+		return contractRepository.findById(id);
+	}
 
 	public void saveAndFlush(Employee employee) { employeeRepository.saveAndFlush(employee); }
 
 	public void delete(Employee employee) { employeeRepository.delete(employee); }
 
-	public void setEmployeeOnId(Long id, Employee employee)
+	public Optional<Employee> setContractOnId(Long id, Contract contract)
 	{
 		Optional<Employee> result = findById(id);
 		if (result.isPresent())
 		{
-			//Employee employee = result.get();
-			//employee.set(employee);
+			Employee employee = result.get();
+			employee.setContract(contract);
+			employeeRepository.save(employee);
 		}
+
+		return result;
 	}
 
 	private Specification<Employee> nameStartsWith(List<String> names)

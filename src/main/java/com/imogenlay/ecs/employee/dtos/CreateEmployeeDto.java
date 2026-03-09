@@ -32,8 +32,9 @@ public record CreateEmployeeDto(
 		@Size(max = 255, message = "Address must be <= 255 characters")
 		String address,
 
-		@NotNull(message = "Employment type (isFullTime) is required")
-		Boolean isFullTime,
+		@NotNull(message = "Contract ID is required")
+		@Min(value = 1, message = "Contract ID must be at least 1")
+		Long contractId,
 
 		@NotNull(message = "Hours per week is required")
 		@Min(value = 1, message = "Hours per week must be at least 1")

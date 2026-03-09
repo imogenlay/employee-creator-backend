@@ -2,10 +2,7 @@ package com.imogenlay.ecs.employee;
 
 import com.imogenlay.ecs.common.ConditionalObject;
 import com.imogenlay.ecs.common.SortOrder;
-import com.imogenlay.ecs.employee.dtos.CreateEmployeeDto;
-import com.imogenlay.ecs.employee.dtos.EmployeeQueryParams;
-import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
-import com.imogenlay.ecs.employee.dtos.UpdateEmployeeDto;
+import com.imogenlay.ecs.employee.dtos.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -30,14 +27,28 @@ public class EmployeeController
 			@RequestParam(required = false) List<String> names,
 			@RequestParam(defaultValue = "DESC") SortOrder order)
 	{
-		EmployeeQueryParams params = new EmployeeQueryParams(names, order);
+		EmployeeQueryParams params = new EmployeeQueryParams(order);
 
 		Sort sort = Sort.by(
 				params.orderOrDefault() == SortOrder.ASC ? Sort.Direction.ASC : Sort.Direction.DESC,
 				"lastName"
 		);
 
-		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAll(params.names(), sort));
+		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAll(names, sort));
+	}
+
+	@GetMapping("/contracts")
+	public ResponseEntity<List<ContractResponse>> findAllContracts(
+			@RequestParam(defaultValue = "DESC") SortOrder order)
+	{
+		EmployeeQueryParams params = new EmployeeQueryParams(order);
+
+		Sort sort = Sort.by(
+				params.orderOrDefault() == SortOrder.ASC ? Sort.Direction.ASC : Sort.Direction.DESC,
+				"name"
+		);
+
+		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAllContracts(sort));
 	}
 
 	@PostMapping()

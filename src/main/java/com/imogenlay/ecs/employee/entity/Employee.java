@@ -4,9 +4,7 @@ import com.imogenlay.ecs.common.entity.BaseTimestampedEntity;
 import com.imogenlay.ecs.common.entity.IFullName;
 import com.imogenlay.ecs.common.entity.TimestampedEntityListener;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
@@ -17,14 +15,16 @@ public class Employee extends BaseTimestampedEntity implements IFullName
 {
 
 	private String firstName;
-	private String middleName = "";
+	private String middleName;
 	private String lastName;
 
 	private String email;
 	private String mobile;
 	private String address;
 
-	private Boolean isFullTime;
+	@ManyToOne
+	@JoinColumn(name = "contract_id")
+	private Contract contract;
 	private Long hoursPerWeek;
 
 	private LocalDate startDate;
@@ -37,7 +37,12 @@ public class Employee extends BaseTimestampedEntity implements IFullName
 
 	public void setFirstName(String firstName) { this.firstName = firstName; }
 
-	public String getMiddleName() { return middleName; }
+	public String getMiddleName()
+	{
+		if (middleName == null)
+			setMiddleName("");
+		return middleName;
+	}
 
 	public void setMiddleName(String middleName) { this.middleName = middleName; }
 
@@ -57,9 +62,9 @@ public class Employee extends BaseTimestampedEntity implements IFullName
 
 	public void setAddress(String address) { this.address = address; }
 
-	public Boolean getIsFullTime() { return isFullTime; }
+	public Contract getContract() { return contract; }
 
-	public void setIsFullTime(Boolean isFullTime) { this.isFullTime = isFullTime; }
+	public void setContract(Contract contract) { this.contract = contract; }
 
 	public Long getHoursPerWeek() { return hoursPerWeek; }
 
@@ -83,7 +88,8 @@ public class Employee extends BaseTimestampedEntity implements IFullName
 				getEmail(),
 				getMobile(),
 				getAddress(),
-				getIsFullTime(),
+				getContract().getId(),
+				getContract().getName(),
 				getHoursPerWeek(),
 				getStartDate(),
 				getEndDate());

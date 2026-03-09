@@ -25,8 +25,12 @@
     "address": {
       "type": "string"
     },
-    "isFullTime": {
-      "type": "boolean"
+    "contractId": {
+      "type": "integer",
+      "format": "int64"
+    },
+    "contractName": {
+      "type": "string"
     },
     "hoursPerWeek": {
       "type": "integer",
@@ -49,7 +53,8 @@
     "email",
     "mobile",
     "address",
-    "isFullTime",
+    "contractId",
+    "contractName",
     "hoursPerWeek",
     "startDate",
     "endDate"
