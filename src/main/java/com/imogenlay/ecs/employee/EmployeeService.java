@@ -2,6 +2,7 @@ package com.imogenlay.ecs.employee;
 
 import com.imogenlay.ecs.common.ConditionalObject;
 import com.imogenlay.ecs.common.entity.IFullName;
+import com.imogenlay.ecs.common.entity.Named;
 import com.imogenlay.ecs.employee.dtos.ContractResponse;
 import com.imogenlay.ecs.employee.dtos.CreateEmployeeDto;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
@@ -65,10 +66,12 @@ public class EmployeeService
 		ConditionalObject<Employee> resultEmployee = findById(id);
 		if (resultEmployee.hasError())
 			return resultEmployee.copyError();
-		if (!fullNameIsValid(data, 2))
-			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Employee's full name must be more than 1 letter");
 
 		Employee employee = resultEmployee.getObject();
+		Named named = new Named(data, employee);
+		if (!fullNameIsValid(named, 2))
+			return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Employee's full name must be more than 1 letter");
+
 		if (data.contractId() != null)
 		{
 			Optional<Contract> resultContract = employeeAccessHandler.findContractById(id);
@@ -77,12 +80,10 @@ public class EmployeeService
 
 			employee.setContract(resultContract.get());
 		}
-		if (data.firstName() != null)
-			employee.setFirstName(normaliseString(data.firstName()));
-		if (data.middleName() != null)
-			employee.setMiddleName(normaliseString(data.middleName()));
-		if (data.lastName() != null)
-			employee.setLastName(normaliseString(data.lastName()));
+
+		employee.setFirstName(normaliseString(named.getFirstName()));
+		employee.setMiddleName(normaliseString(named.getMiddleName()));
+		employee.setLastName(normaliseString(named.getLastName()));
 		if (data.email() != null)
 			employee.setEmail(normaliseString(data.email()));
 		if (data.mobile() != null)

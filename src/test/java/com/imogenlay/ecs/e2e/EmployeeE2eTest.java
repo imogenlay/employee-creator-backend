@@ -17,7 +17,6 @@ import static org.hamcrest.Matchers.is;
 @Profile("test")
 class EmployeeE2eTest extends E2eBase
 {
-
 	private Map<String, Object> createValidDTO()
 	{
 		Map<String, Object> dto = new HashMap<>();
@@ -42,6 +41,7 @@ class EmployeeE2eTest extends E2eBase
 
 		test()
 				.when()
+				.queryParam("order", "ASC")
 				.get("/employees")
 				.then()
 				.statusCode(200)
@@ -67,7 +67,6 @@ class EmployeeE2eTest extends E2eBase
 
 		test()
 				.when()
-				.queryParam("order", "ASC")
 				.queryParam("names", "miller")
 				.get("/employees")
 				.then()
@@ -75,6 +74,23 @@ class EmployeeE2eTest extends E2eBase
 				.body(matchesJsonSchemaInClasspath("schemas/employee-response-list-schema.json"))
 				.body("[0].lastName", equalTo("Miller"))
 				.body("[1].lastName", equalTo("Miller"));
+	}
+
+	@Test
+	void getContract_returnsArrayWithCode200()
+	{
+		employeeFactory.createAndPersistContract("Contract Type A");
+		employeeFactory.createAndPersistContract("Contract Type B");
+
+		test()
+				.when()
+				.queryParam("order", "ASC")
+				.get("/employees/contracts")
+				.then()
+				.statusCode(200)
+				.body(matchesJsonSchemaInClasspath("schemas/contract-response-list-schema.json"))
+				.body("[0].name", equalTo("Contract Type A"))
+				.body("[1].name", equalTo("Contract Type B"));
 	}
 
 	@Test
@@ -145,7 +161,7 @@ class EmployeeE2eTest extends E2eBase
 	}
 
 	@Test
-	void putEmployee_updateFirstName_returns200()
+	void putEmployee_updateFirstName_trimsName_returns200()
 	{
 		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
 		Map<String, Object> dto = new HashMap<>();
@@ -179,6 +195,24 @@ class EmployeeE2eTest extends E2eBase
 				.statusCode(404)
 				.body(matchesJsonSchemaInClasspath("schemas/exception-response-schema.json"))
 				.body("details.error", equalTo("Employee with ID [" + id + "] does not exist"));
+	}
+
+	@Test
+	void putEmployee_updateContractId_IdDoesNotExist_returns404()
+	{
+		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
+		Map<String, Object> dto = new HashMap<>();
+		dto.put("contractId", 333L);
+
+		test()
+				.contentType("application/json")
+				.when()
+				.body(dto)
+				.put("/employees/" + employee.getId())
+				.then()
+				.statusCode(400)
+				.body(matchesJsonSchemaInClasspath("schemas/exception-response-schema.json"))
+				.body("details.error", equalTo("Contract with ID [333] does not exist"));
 	}
 
 	@Test
