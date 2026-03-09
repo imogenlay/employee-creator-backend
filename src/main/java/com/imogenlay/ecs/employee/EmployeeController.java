@@ -37,6 +37,16 @@ public class EmployeeController
 		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAll(names, sort));
 	}
 
+	@GetMapping("/{id}")
+	public ResponseEntity<EmployeeResponse> findId(@PathVariable Long id)
+	{
+		ConditionalObject<EmployeeResponse> result = this.employeeService.findByIdResponse(id);
+		if (result.hasError())
+			result.throwError();
+
+		return ResponseEntity.status(HttpStatus.OK).body(result.getObject());
+	}
+
 	@GetMapping("/contracts")
 	public ResponseEntity<List<ContractResponse>> findAllContracts(
 			@RequestParam(defaultValue = "DESC") SortOrder order)

@@ -23,7 +23,7 @@ public record CreateEmployeeDto(
 		String email,
 
 		@Pattern(
-				regexp = "^[0-9+\\-() ]{7,20}$",
+				regexp = "^$|^[0-9+\\-() ]{7,20}$",
 				message = "Mobile number is invalid"
 		)
 		String mobile,

@@ -19,7 +19,7 @@ public record UpdateEmployeeDto(
 		String email,
 
 		@Pattern(
-				regexp = "^[0-9+\\-() ]{7,20}$",
+				regexp = "^$|^[0-9+\\-() ]{7,20}$",
 				message = "Mobile number is invalid"
 		)
 		String mobile,
@@ -34,7 +34,6 @@ public record UpdateEmployeeDto(
 		@Max(value = 40, message = "Hours per week must be <= 40")
 		Long hoursPerWeek,
 
-		@PastOrPresent(message = "Start date cannot be in the future")
 		LocalDate startDate,
 
 		LocalDate endDate

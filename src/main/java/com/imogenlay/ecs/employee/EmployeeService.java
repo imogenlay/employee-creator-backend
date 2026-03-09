@@ -46,6 +46,16 @@ public class EmployeeService
 		return new ConditionalObject<>(result.get());
 	}
 
+	public ConditionalObject<EmployeeResponse> findByIdResponse(Long id)
+	{
+		ConditionalObject<Employee> result = findById(id);
+
+		if (result.hasError())
+			return result.copyError();
+
+		return new ConditionalObject<>(result.getObject().createResponse());
+	}
+
 	public ConditionalObject<EmployeeResponse> create(CreateEmployeeDto data)
 	{
 		if (!fullNameIsValid(data, 2))
@@ -74,7 +84,7 @@ public class EmployeeService
 
 		if (data.contractId() != null)
 		{
-			Optional<Contract> resultContract = employeeAccessHandler.findContractById(id);
+			Optional<Contract> resultContract = employeeAccessHandler.findContractById(data.contractId());
 			if (resultContract.isEmpty())
 				return new ConditionalObject<>(HttpStatus.BAD_REQUEST, "Contract with ID [" + data.contractId() + "] does not exist");
 

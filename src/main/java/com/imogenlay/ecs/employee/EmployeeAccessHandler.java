@@ -16,7 +16,6 @@ import java.util.Optional;
 @Component
 public class EmployeeAccessHandler
 {
-
 	private final EmployeeRepository employeeRepository;
 	private final ContractRepository contractRepository;
 
