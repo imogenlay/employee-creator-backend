@@ -84,6 +84,7 @@ public class EmployeeFactory
 	public void clear()
 	{
 		this.employeeRepository.deleteAll();
+		this.contractRepository.deleteAll();
 	}
 
 	private String getMiddleName(EmployeeFactoryOptions options)
@@ -147,11 +148,11 @@ public class EmployeeFactory
 		if (contractRepoEmpty())
 		{
 			Contract contract = new Contract();
-			contract.setName("Permanent Full-Time");
+			contract.setName("Unknown Contract");
 			contractRepository.save(contract);
 			return contract;
 		}
-		
+
 		List<Contract> allContracts = contractRepository.findAll();
 		return allContracts.get((int) (Math.random() * allContracts.size()));
 	}

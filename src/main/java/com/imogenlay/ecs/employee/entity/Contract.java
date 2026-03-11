@@ -16,8 +16,7 @@ public class Contract extends BaseEntity
 	public String getName() { return name; }
 
 	public void setName(String name) { this.name = name; }
-
-
+ 
 	public ContractResponse createResponse()
 	{
 		return new ContractResponse(getId(), getName());

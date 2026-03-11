@@ -2,6 +2,7 @@ package com.imogenlay.ecs.e2e;
 
 import com.imogenlay.ecs.E2eBase;
 import com.imogenlay.ecs.config.factory.EmployeeFactoryOptions;
+import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Profile;
@@ -17,7 +18,7 @@ import static org.hamcrest.Matchers.is;
 @Profile("test")
 class EmployeeE2eTest extends E2eBase
 {
-	private Map<String, Object> createValidDTO()
+	private Map<String, Object> createValidDTO(long contractId)
 	{
 		Map<String, Object> dto = new HashMap<>();
 
@@ -27,7 +28,7 @@ class EmployeeE2eTest extends E2eBase
 		dto.put("email", "george_mark@email.com");
 		dto.put("mobile", "1800 9090 2");
 		dto.put("address", "100 House Street VIC");
-		dto.put("contractId", 1);
+		dto.put("contractId", contractId);
 		dto.put("hoursPerWeek", 30L);
 		dto.put("startDate", "2027-01-01");
 		dto.put("endDate", "2027-12-01");
@@ -77,10 +78,18 @@ class EmployeeE2eTest extends E2eBase
 	}
 
 	@Test
-	void getContract_returnsArrayWithCode200()
+	void getContract_ordered_returnsArrayWithCode200()
 	{
 		employeeFactory.createAndPersistContract("Contract Type A");
 		employeeFactory.createAndPersistContract("Contract Type B");
+
+		// Order is descending by default.
+		test()
+				.when()
+				.get("/employees/contracts")
+				.then()
+				.body("[0].name", equalTo("Contract Type B"))
+				.body("[1].name", equalTo("Contract Type A"));
 
 		test()
 				.when()
@@ -96,7 +105,8 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void postEmployee_validDto_returns201()
 	{
-		var dto = createValidDTO();
+		Contract contract = employeeFactory.createAndPersistContract("Freelance Project");
+		var dto = createValidDTO(contract.getId());
 
 		test()
 				.contentType("application/json")
@@ -104,6 +114,7 @@ class EmployeeE2eTest extends E2eBase
 				.when()
 				.post("/employees")
 				.then()
+				.log().all()
 				.statusCode(201)
 				.body(matchesJsonSchemaInClasspath("schemas/employee-response-schema.json"));
 	}
@@ -131,7 +142,8 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void postEmployee_invalidDto_MobileNumberIsLetters_returns400()
 	{
-		var dto = createValidDTO();
+		Contract contract = employeeFactory.createAndPersistContract("Freelance Project");
+		var dto = createValidDTO(contract.getId());
 		dto.put("mobile", "NUMBER");
 
 		test()
@@ -147,7 +159,8 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void postEmployee_invalidDto_EndDateIsBeforeStartDate_returns400()
 	{
-		var dto = createValidDTO();
+		Contract contract = employeeFactory.createAndPersistContract("Enterprise Agreement 1999");
+		var dto = createValidDTO(contract.getId());
 		dto.put("endDate", "1999-09-09");
 
 		test()
