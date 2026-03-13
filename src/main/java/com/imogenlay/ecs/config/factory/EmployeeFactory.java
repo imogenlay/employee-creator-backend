@@ -1,9 +1,9 @@
 package com.imogenlay.ecs.config.factory;
 
 import com.github.javafaker.Faker;
-import com.imogenlay.ecs.employee.ContractRepository;
+import com.imogenlay.ecs.contract.ContractRepository;
+import com.imogenlay.ecs.contract.entity.Contract;
 import com.imogenlay.ecs.employee.EmployeeRepository;
-import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -74,10 +74,11 @@ public class EmployeeFactory
 		return employeeRepository.save(employee);
 	}
 
-	public Contract createAndPersistContract(String name)
+	public Contract createAndPersistContract(String name, Boolean isFullTime)
 	{
 		Contract contract = new Contract();
 		contract.setName(name);
+		contract.setIsFullTime(isFullTime);
 		return contractRepository.save(contract);
 	}
 

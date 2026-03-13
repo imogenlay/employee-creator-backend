@@ -3,6 +3,7 @@ package com.imogenlay.ecs.employee.entity;
 import com.imogenlay.ecs.common.entity.BaseTimestampedEntity;
 import com.imogenlay.ecs.common.entity.IFullName;
 import com.imogenlay.ecs.common.entity.TimestampedEntityListener;
+import com.imogenlay.ecs.contract.entity.Contract;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
 import jakarta.persistence.*;
 

@@ -1,6 +1,7 @@
 package com.imogenlay.ecs.common;
 
-public enum SortOrder {
-    ASC,
-    DESC,
+public enum SortOrder
+{
+	ASC,
+	DESC,
 }

@@ -2,7 +2,10 @@ package com.imogenlay.ecs.employee;
 
 import com.imogenlay.ecs.common.ConditionalObject;
 import com.imogenlay.ecs.common.SortOrder;
-import com.imogenlay.ecs.employee.dtos.*;
+import com.imogenlay.ecs.employee.dtos.CreateEmployeeDto;
+import com.imogenlay.ecs.employee.dtos.EmployeeQueryParams;
+import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
+import com.imogenlay.ecs.employee.dtos.UpdateEmployeeDto;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -25,13 +28,14 @@ public class EmployeeController
 	@GetMapping
 	public ResponseEntity<List<EmployeeResponse>> findAll(
 			@RequestParam(required = false) List<String> names,
-			@RequestParam(defaultValue = "DESC") SortOrder order)
+			@RequestParam(defaultValue = "DESC") SortOrder order,
+			@RequestParam(defaultValue = "lastName") String sortBy)
 	{
 		EmployeeQueryParams params = new EmployeeQueryParams(order);
 
 		Sort sort = Sort.by(
 				params.orderOrDefault() == SortOrder.ASC ? Sort.Direction.ASC : Sort.Direction.DESC,
-				"lastName"
+				sortBy
 		);
 
 		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAll(names, sort));
@@ -47,20 +51,6 @@ public class EmployeeController
 		return ResponseEntity.status(HttpStatus.OK).body(result.getObject());
 	}
 
-	@GetMapping("/contracts")
-	public ResponseEntity<List<ContractResponse>> findAllContracts(
-			@RequestParam(defaultValue = "DESC") SortOrder order)
-	{
-		EmployeeQueryParams params = new EmployeeQueryParams(order);
-
-		Sort sort = Sort.by(
-				params.orderOrDefault() == SortOrder.ASC ? Sort.Direction.ASC : Sort.Direction.DESC,
-				"name"
-		);
-
-		return ResponseEntity.status(HttpStatus.OK).body(employeeService.findAllContracts(sort));
-	}
-
 	@PostMapping()
 	public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody CreateEmployeeDto data)
 	{
@@ -71,7 +61,7 @@ public class EmployeeController
 		return ResponseEntity.status(HttpStatus.CREATED).body(result.getObject());
 	}
 
-	@PutMapping("/{id}")
+	@PatchMapping("/{id}")
 	public ResponseEntity<EmployeeResponse> update(
 			@PathVariable Long id,
 			@Valid @RequestBody UpdateEmployeeDto data)

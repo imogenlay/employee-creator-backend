@@ -3,11 +3,10 @@ package com.imogenlay.ecs.employee;
 import com.imogenlay.ecs.common.ConditionalObject;
 import com.imogenlay.ecs.common.entity.IFullName;
 import com.imogenlay.ecs.common.entity.Named;
-import com.imogenlay.ecs.employee.dtos.ContractResponse;
+import com.imogenlay.ecs.contract.entity.Contract;
 import com.imogenlay.ecs.employee.dtos.CreateEmployeeDto;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
 import com.imogenlay.ecs.employee.dtos.UpdateEmployeeDto;
-import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -30,11 +29,6 @@ public class EmployeeService
 	public List<EmployeeResponse> findAll(List<String> employees, Sort sort)
 	{
 		return employeeAccessHandler.findAll(employees, sort);
-	}
-
-	public List<ContractResponse> findAllContracts(Sort sort)
-	{
-		return employeeAccessHandler.findAllContracts(sort);
 	}
 
 	public ConditionalObject<Employee> findById(Long id)

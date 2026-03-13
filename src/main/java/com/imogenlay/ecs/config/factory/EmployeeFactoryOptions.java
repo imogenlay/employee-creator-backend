@@ -1,6 +1,6 @@
 package com.imogenlay.ecs.config.factory;
 
-import com.imogenlay.ecs.employee.entity.Contract;
+import com.imogenlay.ecs.contract.entity.Contract;
 
 import java.time.LocalDate;
 

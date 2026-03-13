@@ -2,7 +2,7 @@ package com.imogenlay.ecs.e2e;
 
 import com.imogenlay.ecs.E2eBase;
 import com.imogenlay.ecs.config.factory.EmployeeFactoryOptions;
-import com.imogenlay.ecs.employee.entity.Contract;
+import com.imogenlay.ecs.contract.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Profile;
@@ -80,13 +80,13 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void getContract_ordered_returnsArrayWithCode200()
 	{
-		employeeFactory.createAndPersistContract("Contract Type A");
-		employeeFactory.createAndPersistContract("Contract Type B");
+		employeeFactory.createAndPersistContract("Contract Type A", true);
+		employeeFactory.createAndPersistContract("Contract Type B", true);
 
 		// Order is descending by default.
 		test()
 				.when()
-				.get("/employees/contracts")
+				.get("/contracts")
 				.then()
 				.body("[0].name", equalTo("Contract Type B"))
 				.body("[1].name", equalTo("Contract Type A"));
@@ -94,7 +94,7 @@ class EmployeeE2eTest extends E2eBase
 		test()
 				.when()
 				.queryParam("order", "ASC")
-				.get("/employees/contracts")
+				.get("/contracts")
 				.then()
 				.statusCode(200)
 				.body(matchesJsonSchemaInClasspath("schemas/contract-response-list-schema.json"))
@@ -105,7 +105,7 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void postEmployee_validDto_returns201()
 	{
-		Contract contract = employeeFactory.createAndPersistContract("Freelance Project");
+		Contract contract = employeeFactory.createAndPersistContract("Freelance Project", true);
 		var dto = createValidDTO(contract.getId());
 
 		test()
@@ -142,7 +142,7 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void postEmployee_invalidDto_MobileNumberIsLetters_returns400()
 	{
-		Contract contract = employeeFactory.createAndPersistContract("Freelance Project");
+		Contract contract = employeeFactory.createAndPersistContract("Freelance Project", true);
 		var dto = createValidDTO(contract.getId());
 		dto.put("mobile", "NUMBER");
 
@@ -159,7 +159,7 @@ class EmployeeE2eTest extends E2eBase
 	@Test
 	void postEmployee_invalidDto_EndDateIsBeforeStartDate_returns400()
 	{
-		Contract contract = employeeFactory.createAndPersistContract("Enterprise Agreement 1999");
+		Contract contract = employeeFactory.createAndPersistContract("Enterprise Agreement 1999", false);
 		var dto = createValidDTO(contract.getId());
 		dto.put("endDate", "1999-09-09");
 
@@ -184,7 +184,7 @@ class EmployeeE2eTest extends E2eBase
 				.contentType("application/json")
 				.when()
 				.body(dto)
-				.put("/employees/" + employee.getId())
+				.patch("/employees/" + employee.getId())
 				.then()
 				.statusCode(200)
 				.body(matchesJsonSchemaInClasspath("schemas/employee-response-schema.json"))
@@ -203,7 +203,7 @@ class EmployeeE2eTest extends E2eBase
 				.contentType("application/json")
 				.when()
 				.body(dto)
-				.put("/employees/" + id)
+				.patch("/employees/" + id)
 				.then()
 				.statusCode(404)
 				.body(matchesJsonSchemaInClasspath("schemas/exception-response-schema.json"))
@@ -221,7 +221,7 @@ class EmployeeE2eTest extends E2eBase
 				.contentType("application/json")
 				.when()
 				.body(dto)
-				.put("/employees/" + employee.getId())
+				.patch("/employees/" + employee.getId())
 				.then()
 				.statusCode(400)
 				.body(matchesJsonSchemaInClasspath("schemas/exception-response-schema.json"))
@@ -247,7 +247,7 @@ class EmployeeE2eTest extends E2eBase
 	void deleteEmployee_employeeDoesNotExist_returns404()
 	{
 		Employee employee = employeeFactory.createAndPersist(new EmployeeFactoryOptions().firstName("Sarah"));
-		long id = employee.getId().longValue() + 1L;
+		long id = employee.getId() + 1L;
 
 		test()
 				.contentType("application/json")

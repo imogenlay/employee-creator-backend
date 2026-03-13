@@ -1,8 +1,8 @@
 package com.imogenlay.ecs.employee;
 
-import com.imogenlay.ecs.employee.dtos.ContractResponse;
+import com.imogenlay.ecs.contract.ContractRepository;
+import com.imogenlay.ecs.contract.entity.Contract;
 import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
-import com.imogenlay.ecs.employee.entity.Contract;
 import com.imogenlay.ecs.employee.entity.Employee;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
@@ -36,17 +36,11 @@ public class EmployeeAccessHandler
 			return findAll(sort);
 		else
 			return employeeRepository.findAll(nameStartsWith(names), sort).stream().map((t) -> t.createResponse()).toList();
-
 	}
 
 	public Optional<Employee> findById(Long id)
 	{
 		return employeeRepository.findById(id);
-	}
-
-	public List<ContractResponse> findAllContracts(Sort sort)
-	{
-		return contractRepository.findAll(sort).stream().map((c) -> c.createResponse()).toList();
 	}
 
 	public Optional<Contract> findContractById(Long id)

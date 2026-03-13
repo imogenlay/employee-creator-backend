@@ -1,6 +1,7 @@
 package com.imogenlay.ecs.config;
 
 import com.imogenlay.ecs.config.factory.EmployeeFactory;
+import com.imogenlay.ecs.config.factory.EmployeeFactoryOptions;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -22,14 +23,18 @@ public class DataSeeder implements CommandLineRunner
 		System.out.println("SEED NEW EMPLOYEES");
 		if (employeeFactory.repoEmpty())
 		{
-			employeeFactory.createAndPersistContract("Permanent Full-Time");
-			employeeFactory.createAndPersistContract("Permanent Part-Time");
-			employeeFactory.createAndPersistContract("Contract Full-Time");
-			employeeFactory.createAndPersistContract("Contract Part-Time");
+			employeeFactory.createAndPersistContract("Permanent Full-Time", true);
+			employeeFactory.createAndPersistContract("Permanent Part-Time", false);
+			employeeFactory.createAndPersistContract("Contract Full-Time", true);
+			employeeFactory.createAndPersistContract("Contract Part-Time", false);
 		}
- 
+
 		if (employeeFactory.repoEmpty())
-			for (int i = 0; i < 15; i++)
+		{
+			employeeFactory.createAndPersist(new EmployeeFactoryOptions().lastName("Aardy"));
+			employeeFactory.createAndPersist(new EmployeeFactoryOptions().lastName("Zhao"));
+			for (int i = 0; i < 30; i++)
 				employeeFactory.createAndPersist();
+		}
 	}
 }
