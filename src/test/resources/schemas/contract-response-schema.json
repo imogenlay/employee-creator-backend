@@ -9,11 +9,15 @@
     },
     "name": {
       "type": "string"
+    },
+    "isFullTime": {
+      "type": "boolean"
     }
   },
   "required": [
     "id",
-    "name"
+    "name",
+    "isFullTime"
   ],
   "additionalProperties": false
 }

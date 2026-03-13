@@ -38,7 +38,7 @@ public class ContractService
 	public ConditionalObject<ContractResponse> create(CreateContractDto data)
 	{
 		Contract contract = new Contract();
-		contract.setName(data.name());
+		contract.setName(data.name().trim());
 		contract.setIsFullTime(data.isFullTime());
 		contractAccessHandler.saveAndFlush(contract);
 		return new ConditionalObject<>(contract.createResponse());
@@ -51,7 +51,7 @@ public class ContractService
 			return result.copyError();
 
 		Contract contract = result.getObject();
-		contract.setName(data.name());
+		contract.setName(data.name().trim());
 		contract.setIsFullTime(data.isFullTime());
 		contractAccessHandler.saveAndFlush(contract);
 		return new ConditionalObject<>(contract.createResponse());
