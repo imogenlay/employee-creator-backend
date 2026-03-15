@@ -27,7 +27,6 @@ public class EmployeeAccessHandler
 
 	public List<EmployeeResponse> findAll(Sort sort)
 	{
-		System.out.println("printing b");
 		return employeeRepository.findAll(sort).stream().map((t) -> t.createResponse()).toList();
 	}
 

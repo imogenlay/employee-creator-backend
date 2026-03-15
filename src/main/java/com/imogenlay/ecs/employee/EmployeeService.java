@@ -28,7 +28,6 @@ public class EmployeeService
 
 	public List<EmployeeResponse> findAll()
 	{
-		System.out.println("printing a");
 		return employeeAccessHandler.findAll(Sort.by(Sort.Direction.ASC, "lastName"));
 	}
 
