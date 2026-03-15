@@ -23,11 +23,9 @@ public class ClaudeService
 	@Value("${anthropic.api.key}")
 	private String apiKey;
 
-	private final ClaudeSystem claudeSystem = new ClaudeSystem();
-	private final RestTemplate restTemplate = new RestTemplate();
-
-	private final EmployeeService employeeService;
 	private final ObjectMapper objectMapper;
+	private final EmployeeService employeeService;
+	private final RestTemplate restTemplate = new RestTemplate();
 
 	public ClaudeService(ObjectMapper objectMapper, EmployeeService employeeService)
 	{
@@ -37,12 +35,88 @@ public class ClaudeService
 
 	public ConditionalObject<ClaudeResponse> ask(List<Message> messages)
 	{
+		var headers = buildHeaders();
+		var tools = List.of(buildEmployeeTool());
+		var conversationHistory = createMessageChain(messages);
+
+		ResponseEntity<Map> response = callClaude(headers, tools, conversationHistory);
+
+		while (ClaudeSystem.STOP_REASON_TOOL_USE.equals(getStopReason(response)))
+		{
+			// Run loop until AI has decided there is no reason to stop anymore.
+			// The AI will request a stop if it needs a tool.
+			List<Map<String, Object>> responseContent = getContent(response);
+			Map<String, Object> toolUseBlock = findToolUseBlock(responseContent);
+
+			if (toolUseBlock == null)
+				break;
+
+			conversationHistory.add(Map.of("role", "assistant", "content", responseContent));
+			conversationHistory.add(buildToolResult(toolUseBlock));
+			response = callClaude(headers, tools, conversationHistory);
+		}
+
+		String output = extractTextFromResponse(response);
+		return new ConditionalObject<>(new ClaudeResponse("assistant", output));
+	}
+
+	private ResponseEntity<Map> callClaude(HttpHeaders headers, List<Map<String, Object>> tools, List<Map<String, Object>> history)
+	{
+		var body = Map.of(
+				"model", ClaudeSystem.MODEL,
+				"max_tokens", ClaudeSystem.MAX_TOKENS,
+				"system", ClaudeSystem.PROMPT,
+				"tools", tools,
+				"messages", history
+		);
+
+		return restTemplate.postForEntity(ClaudeSystem.URL, new HttpEntity<>(body, headers), Map.class);
+	}
+
+	private Map<String, Object> buildToolResult(Map<String, Object> toolUseBlock)
+	{
+		try
+		{
+			String toolName = (String) toolUseBlock.get("name");
+			String resultJson = resolveToolCall(toolName);
+
+			return Map.of(
+					"role", "user",
+					"content", List.of(Map.of(
+							"type", "tool_result",
+							"tool_use_id", toolUseBlock.get("id"),
+							"content", resultJson
+					))
+			);
+		}
+		catch (Exception ex)
+		{
+			throw new RuntimeException("Failed to resolve tool call: " + ex.getMessage(), ex);
+		}
+	}
+
+	private String resolveToolCall(String toolName) throws Exception
+	{
+		return switch (toolName)
+		{
+			case ClaudeSystem.TOOL_GET_ALL_EMPLOYEES -> objectMapper.writeValueAsString(employeeService.findAll());
+			default -> throw new IllegalArgumentException("Unknown tool: " + toolName);
+		};
+	}
+
+	private HttpHeaders buildHeaders()
+	{
 		var headers = new HttpHeaders();
 		headers.set("x-api-key", apiKey);
 		headers.set("anthropic-version", "2023-06-01");
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		Map<String, Object> employeeTool = Map.of(
-				"name", "get_all_employees",
+		return headers;
+	}
+
+	private static Map<String, Object> buildEmployeeTool()
+	{
+		return Map.of(
+				"name", ClaudeSystem.TOOL_GET_ALL_EMPLOYEES,
 				"description", "Fetches all employees from the database",
 				"input_schema", Map.of(
 						"type", "object",
@@ -50,90 +124,39 @@ public class ClaudeService
 						"required", List.of()
 				)
 		);
-
-		var conversationHistory = createMessageChain(messages);
-		Map<String, Object> body = Map.of(
-				"model", "claude-sonnet-4-20250514",
-				"max_tokens", 1024,
-				"system", claudeSystem.getPrompt(),
-				"tools", List.of(employeeTool),
-				"messages", conversationHistory
-		);
-
-		System.out.println("Running a");
-		HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-		ResponseEntity<Map> response = restTemplate.postForEntity(claudeSystem.getUrl(), request, Map.class);
-		var content = (List<Map<String, Object>>) response.getBody().get("content");
-		var stopReason = response.getBody().get("stop_reason");
-
-		System.out.println("Running b");
-		if ("tool_use".equals(stopReason))
-		{
-			Map toolContent = null;
-
-			for (Map<String, Object> stringObjectMap : content)
-				if ("tool_use".equals(stringObjectMap.get("type")))
-					toolContent = stringObjectMap;
-
-			if (toolContent != null)
-			{
-				String toolName = (String) toolContent.get("name");
-
-				conversationHistory.add(Map.of(
-						"role", "assistant",
-						"content", content
-				));
-
-
-				try
-				{
-					String employees = objectMapper.writeValueAsString(employeeService.findAll());
-
-					conversationHistory.add(Map.of(
-							"role", "user",
-							"content", List.of(Map.of(
-									"type", "tool_result",
-									"tool_use_id", toolContent.get("id"),
-									"content", employees
-							))
-					));
-
-					body = Map.of(
-							"model", "claude-sonnet-4-20250514",
-							"max_tokens", 1024,
-							"system", claudeSystem.getPrompt(),
-							"tools", List.of(employeeTool),
-							"messages", conversationHistory
-					);
-
-					request = new HttpEntity<>(body, headers);
-					response = restTemplate.postForEntity(claudeSystem.getUrl(), request, Map.class);
-				}
-				catch (Exception ex)
-				{
-					System.out.println("ERRORRRR " + ex.getMessage() + "   ");
-				}
-			}
-		}
-
-		// Get text from response.
-		System.out.println(response);
-		var content2 = (List<Map<String, String>>) (response.getBody().get("content"));
-
-		String output = content2.get(0).get("text");
-		System.out.println(output);
-		return new ConditionalObject<>(new ClaudeResponse("assistant", output));
 	}
 
+	@SuppressWarnings("unchecked")
+	private static List<Map<String, Object>> getContent(ResponseEntity<Map> response)
+	{
+		return (List<Map<String, Object>>) response.getBody().get("content");
+	}
 
-	private List<Map<String, Object>> createMessageChain(List<Message> messages)
+	private static String getStopReason(ResponseEntity<Map> response)
+	{
+		return (String) response.getBody().get("stop_reason");
+	}
+
+	private static Map<String, Object> findToolUseBlock(List<Map<String, Object>> content)
+	{
+		return content.stream()
+				.filter(block -> "tool_use".equals(block.get("type")))
+				.findFirst()
+				.orElse(null);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static String extractTextFromResponse(ResponseEntity<Map> response)
+	{
+		var content = (List<Map<String, String>>) response.getBody().get("content");
+		return content.get(0).get("text");
+	}
+
+	private static List<Map<String, Object>> createMessageChain(List<Message> messages)
 	{
 		var list = new ArrayList<Map<String, Object>>(messages.size());
 		for (Message message : messages)
-			list.add(Map.of(
-					"role", message.role(),
-					"content", message.content()));
-
+			list.add(Map.of("role", message.role(), "content", message.content()));
 		return list;
 	}
 }
