@@ -26,9 +26,15 @@ public class EmployeeService
 		this.employeeAccessHandler = employeeAccessHandler;
 	}
 
-	public List<EmployeeResponse> findAll(List<String> employees, Sort sort)
+	public List<EmployeeResponse> findAll()
 	{
-		return employeeAccessHandler.findAll(employees, sort);
+		System.out.println("printing a");
+		return employeeAccessHandler.findAll(Sort.by(Sort.Direction.ASC, "lastName"));
+	}
+
+	public List<EmployeeResponse> findAll(List<String> names, Sort sort)
+	{
+		return employeeAccessHandler.findAll(names, sort);
 	}
 
 	public ConditionalObject<Employee> findById(Long id)

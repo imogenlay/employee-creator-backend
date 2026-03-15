@@ -1,4 +1,4 @@
-package com.imogenlay.ecs.common;
+package com.imogenlay.ecs.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
