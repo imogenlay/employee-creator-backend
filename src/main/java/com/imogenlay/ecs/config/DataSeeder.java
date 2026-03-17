@@ -33,7 +33,7 @@ public class DataSeeder implements CommandLineRunner
 		{
 			employeeFactory.createAndPersist(new EmployeeFactoryOptions().lastName("Aardy"));
 			employeeFactory.createAndPersist(new EmployeeFactoryOptions().lastName("Zhao"));
-			for (int i = 0; i < 30; i++)
+			for (int i = 0; i < 10; i++)
 				employeeFactory.createAndPersist();
 		}
 	}

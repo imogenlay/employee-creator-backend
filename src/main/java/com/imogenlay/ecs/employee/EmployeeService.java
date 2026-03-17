@@ -96,15 +96,15 @@ public class EmployeeService
 		if (data.email() != null)
 			employee.setEmail(normaliseString(data.email()));
 		if (data.mobile() != null)
-			employee.setMobile(normaliseString(data.mobile()));
+			employee.setMobile(normaliseStringOrNull(data.mobile()));
 		if (data.address() != null)
 			employee.setAddress(normaliseString(data.address()));
 		if (data.hoursPerWeek() != null)
 			employee.setHoursPerWeek(data.hoursPerWeek());
 		if (data.startDate() != null)
 			employee.setStartDate(data.startDate());
-		if (data.endDate() != null)
-			employee.setEndDate(data.endDate());
+		// End date gets set even if the value is null!
+		employee.setEndDate(data.endDate());
 		employeeAccessHandler.saveAndFlush(employee);
 		return new ConditionalObject<>(employee.createResponse());
 	}
@@ -131,9 +131,19 @@ public class EmployeeService
 
 	private String normaliseString(String value)
 	{
+		return normaliseStringWithDefaultReturn(value, "");
+	}
+
+	private String normaliseStringOrNull(String value)
+	{
+		return normaliseStringWithDefaultReturn(value, null);
+	}
+
+	private String normaliseStringWithDefaultReturn(String value, String defaultReturn)
+	{
 		if (value == null)
-			return "";
-		return value.trim();
+			return defaultReturn;
+		return value.trim().replaceAll("\\s+", " ");
 	}
 
 	public boolean isEndDateValid(LocalDate startDate, LocalDate endDate)
@@ -150,7 +160,7 @@ public class EmployeeService
 		employee.setMiddleName(normaliseString(data.middleName()));
 		employee.setLastName(normaliseString(data.lastName()));
 		employee.setEmail(normaliseString(data.email()));
-		employee.setMobile(normaliseString(data.mobile()));
+		employee.setMobile(normaliseStringOrNull(data.mobile()));
 		employee.setAddress(normaliseString(data.address()));
 
 		employee.setContract(contract);

@@ -4,16 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.imogenlay.ecs.claude.dtos.ClaudeResponse;
 import com.imogenlay.ecs.claude.dtos.Message;
 import com.imogenlay.ecs.common.ConditionalObject;
+import com.imogenlay.ecs.common.error.InternalServerException;
+import com.imogenlay.ecs.contract.ContractService;
 import com.imogenlay.ecs.employee.EmployeeService;
+import com.imogenlay.ecs.employee.dtos.EmployeeResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,38 +28,42 @@ public class ClaudeService
 
 	private final ObjectMapper objectMapper;
 	private final EmployeeService employeeService;
+	private final ContractService contractService;
 	private final RestTemplate restTemplate = new RestTemplate();
 
-	public ClaudeService(ObjectMapper objectMapper, EmployeeService employeeService)
+	public ClaudeService(ObjectMapper objectMapper, EmployeeService employeeService, ContractService contractService)
 	{
 		this.objectMapper = objectMapper;
 		this.employeeService = employeeService;
+		this.contractService = contractService;
 	}
 
 	public ConditionalObject<ClaudeResponse> ask(List<Message> messages)
 	{
-		var headers = buildHeaders();
-		var tools = List.of(buildEmployeeTool());
-		var conversationHistory = createMessageChain(messages);
+		var headers = ClaudeSystem.buildHeaders(apiKey);
+		var tools = ClaudeSystem.buildAllTools();
+		var conversationHistory = ClaudeSystem.createMessageChain(messages);
 
 		ResponseEntity<Map> response = callClaude(headers, tools, conversationHistory);
 
-		while (ClaudeSystem.STOP_REASON_TOOL_USE.equals(getStopReason(response)))
+		while (ClaudeSystem.claudeRequestsStop(response))
 		{
-			// Run loop until AI has decided there is no reason to stop anymore.
 			// The AI will request a stop if it needs a tool.
-			List<Map<String, Object>> responseContent = getContent(response);
-			Map<String, Object> toolUseBlock = findToolUseBlock(responseContent);
+			// Run loop until AI has decided there is no reason to stop anymore.
+			List<Map<String, Object>> responseContent = ClaudeSystem.getContent(response);
+			Map<String, Object> toolUseBlock = ClaudeSystem.findToolUseBlock(responseContent);
 
 			if (toolUseBlock == null)
 				break;
 
+			// Add the tool information given to the AI to conversation.
 			conversationHistory.add(Map.of("role", "assistant", "content", responseContent));
+			// Add tool response to conversation. Send that back to AI.
 			conversationHistory.add(buildToolResult(toolUseBlock));
 			response = callClaude(headers, tools, conversationHistory);
 		}
 
-		String output = extractTextFromResponse(response);
+		String output = ClaudeSystem.extractTextFromResponse(response);
 		return new ConditionalObject<>(new ClaudeResponse("assistant", output));
 	}
 
@@ -78,7 +85,8 @@ public class ClaudeService
 		try
 		{
 			String toolName = (String) toolUseBlock.get("name");
-			String resultJson = resolveToolCall(toolName);
+			Map<String, Object> toolInput = (Map<String, Object>) toolUseBlock.get("input");
+			String resultJson = resolveToolCall(toolName, toolInput);
 
 			return Map.of(
 					"role", "user",
@@ -91,72 +99,53 @@ public class ClaudeService
 		}
 		catch (Exception ex)
 		{
-			throw new RuntimeException("Failed to resolve tool call: " + ex.getMessage(), ex);
+			throw new InternalServerException("Failed to resolve tool call: " + ex.getMessage());
 		}
 	}
 
-	private String resolveToolCall(String toolName) throws Exception
+	private String resolveToolCall(String toolName, Map<String, Object> toolInput) throws Exception
 	{
-		return switch (toolName)
+		List<Map<String, Object>> result = new ArrayList<>();
+
+		switch (toolName)
 		{
-			case ClaudeSystem.TOOL_GET_ALL_EMPLOYEES -> objectMapper.writeValueAsString(employeeService.findAll());
-			default -> throw new IllegalArgumentException("Unknown tool: " + toolName);
-		};
+			case ClaudeSystem.TOOL_GET_ALL_EMPLOYEE_NAMES_AND_IDS:
+			{
+				List<EmployeeResponse> employees = employeeService.findAll();
+				for (EmployeeResponse employee : employees)
+				{
+					Map<String, Object> next = new HashMap<>();
+					next.put("id", employee.id());
+					next.put("firstName", employee.firstName());
+					next.put("middleName", employee.middleName());
+					next.put("lastName", employee.lastName());
+					result.add(next);
+				}
+				break;
+			}
+			case ClaudeSystem.TOOL_GET_EMPLOYEE_BY_ID:
+			{
+				Long employeeId = ((Integer) toolInput.get("id")).longValue();
+				ConditionalObject<EmployeeResponse> employeeResponse = employeeService.findByIdResponse(employeeId);
+
+				if (employeeResponse.hasError())
+					return employeeResponse.getErrorMessage();
+
+				Map<String, Object> employee = Map.of("employee", employeeResponse.getObject());
+				result.add(employee);
+				break;
+			}
+			case ClaudeSystem.TOOL_GET_ALL_CONTRACTS:
+			{
+				Map<String, Object> contracts = Map.of("contracts", contractService.findAll());
+				result.add(contracts);
+			}
+			default:
+				throw new InternalServerException("Unknown tool: " + toolName);
+		}
+
+		return objectMapper.writeValueAsString(result);
 	}
 
-	private HttpHeaders buildHeaders()
-	{
-		var headers = new HttpHeaders();
-		headers.set("x-api-key", apiKey);
-		headers.set("anthropic-version", "2023-06-01");
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		return headers;
-	}
 
-	private static Map<String, Object> buildEmployeeTool()
-	{
-		return Map.of(
-				"name", ClaudeSystem.TOOL_GET_ALL_EMPLOYEES,
-				"description", "Fetches all employees from the database",
-				"input_schema", Map.of(
-						"type", "object",
-						"properties", Map.of(),
-						"required", List.of()
-				)
-		);
-	}
-
-	@SuppressWarnings("unchecked")
-	private static List<Map<String, Object>> getContent(ResponseEntity<Map> response)
-	{
-		return (List<Map<String, Object>>) response.getBody().get("content");
-	}
-
-	private static String getStopReason(ResponseEntity<Map> response)
-	{
-		return (String) response.getBody().get("stop_reason");
-	}
-
-	private static Map<String, Object> findToolUseBlock(List<Map<String, Object>> content)
-	{
-		return content.stream()
-				.filter(block -> "tool_use".equals(block.get("type")))
-				.findFirst()
-				.orElse(null);
-	}
-
-	@SuppressWarnings("unchecked")
-	private static String extractTextFromResponse(ResponseEntity<Map> response)
-	{
-		var content = (List<Map<String, String>>) response.getBody().get("content");
-		return content.get(0).get("text");
-	}
-
-	private static List<Map<String, Object>> createMessageChain(List<Message> messages)
-	{
-		var list = new ArrayList<Map<String, Object>>(messages.size());
-		for (Message message : messages)
-			list.add(Map.of("role", message.role(), "content", message.content()));
-		return list;
-	}
 }

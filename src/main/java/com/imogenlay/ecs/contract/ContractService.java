@@ -21,6 +21,11 @@ public class ContractService
 		this.contractAccessHandler = contractAccessHandler;
 	}
 
+	public List<ContractResponse> findAll()
+	{
+		return contractAccessHandler.findAll(Sort.by(Sort.Direction.ASC, "name"));
+	}
+
 	public List<ContractResponse> findAll(Sort sort)
 	{
 		return contractAccessHandler.findAll(sort);
